@@ -1,0 +1,25 @@
+#!/bin/sh
+# https://github.com/Haarolean/yandex-ddns
+# Bash script for updating Yandex DNS records with Merlin's asuswrt firmware. Place this file under /jffs/scripts and run 'chmod u+x ddns-start'
+
+# SETTINGS
+domain=example.com
+token=0000000000000000000000000000000000000000000000000000 # See https://pddimp.yandex.ru/api2/admin/get_token
+subdomain=@ # Use "@" for primary 
+record_id=0000000 # See https://tech.yandex.ru/pdd/doc/reference/dns-list-docpage/
+ttl=900
+# SETTINGS END
+
+api_url="https://pddimp.yandex.ru/api2/admin/dns/edit"
+ip=${1} #passed by the router
+
+query=$(curl -4 -s -H "PddToken: $token" -d "domain=$domain&record_id=$record_id&subdomain=$subdomain&ttl=$ttl&content=$ip" $api_url)
+
+if echo "$query" | grep -q '"success": "ok"'
+ then
+        logger -t "[DDNS]" "$domain updated successfully."
+        /sbin/ddns_custom_updated 1
+ else
+        logger -t "[DDNS]" "Error updating $domain: $response"
+        /sbin/ddns_custom_updated 0
+ fi
